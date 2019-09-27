@@ -134,6 +134,11 @@ runmodel = function(my, variables, mdata){
   #google how to remove extra grey area in ggplot (padding?)
 }
 
+# works
+runmodel("prog", c("ses","write","female","schtyp","awards"), ml)
+
+# broken, why? need to debug
+runmodel("prog", c("ses","write","math", "science", "female","ses","schtyp","awards"), ml)
 runmodel("prog", c("ses","write","math", "science", "female","schtyp","awards"), ml)
 
 
