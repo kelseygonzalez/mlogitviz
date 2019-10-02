@@ -61,6 +61,8 @@ runmodel = function(my, variables, mdata){
     }
   }
   predictions
+  
+  # until I fixed the fact that fivenum may give values no representative in the dataset, I will remove variables that are NA
   predictions <- na.omit(predictions) 
   
   #define euclidean distance function
@@ -131,7 +133,7 @@ runmodel = function(my, variables, mdata){
   #renaming columns for ggplot ease of call
   colnames(scaledmatrix.sort.long)[colnames(scaledmatrix.sort.long)=="Var1"] <- "Predictors"
   colnames(scaledmatrix.sort.long)[colnames(scaledmatrix.sort.long)=="Var2"] <- "Outcomes"
-  colnames(scaledmatrix.sort.long)[colnames(scaledmatrix.sort.long)=="value"] <- "Column Z-Score"
+  colnames(scaledmatrix.sort.long)[colnames(scaledmatrix.sort.long)=="value"] <- "Column\nZ-Score"
   
   # allows original values to label the cells instead of scaled values
   scaledmatrix.sort.long <- cbind(scaledmatrix.sort.long, predictions.long)
@@ -142,9 +144,10 @@ runmodel = function(my, variables, mdata){
     scale_fill_gradient2(low = "red4", mid = "white",
                          high = "forestgreen", midpoint = 0, space = "Lab",
                          na.value = "grey50", guide = "colourbar", aesthetics = "fill") +
-    geom_tile(aes(fill = `Column Z-Score`)) +  
+    geom_tile(aes(fill = `Column\nZ-Score`)) +  
+    scale_x_discrete(position = "top") +
     ggtitle("Heatmap of Predicted Probabilities") +
-    theme(legend.position = "right") +
+    theme(legend.position = "right", axis.text.x = element_text(angle = 90)) +
     geom_segment(data=line, aes(x=X, y=Y, xend=Xend, yend=Yend)) +
     geom_text(size = 2, aes(label = format(round(originalvalue, 3), nsmall = 3))) 
     
@@ -162,8 +165,34 @@ ml <- read.dta("https://stats.idre.ucla.edu/stat/data/hsbdemo.dta")
 runmodel("prog", c("ses","write","female","schtyp","awards"), ml)
 
 # broken, why? need to debug
-runmodel("prog", c("ses","write","math", "science", "female","ses","schtyp","awards"), ml)
+runmodel("prog", c("ses","write","math","female","schtyp","awards"), ml)
 runmodel("prog", c("ses","write","math", "science", "female","schtyp","awards"), ml)
+# Error to debug: Error in colMeans(fitted(model)[mdata[, get("var")] == (fivenum(mdata[,  : 'x' must be an array of at least two dimensions 
+# Not sure where this error is originating, as soon as I add math etc it crashes the function
 
-runmodel("prog", c("ses","write","female","schtyp","awards"), ml)
+# Let's test it with some real data...
+require(readxl)
+Pew2013 <- read_xls("Pew2013Latino.xls", col_names = TRUE)
+Pew2013 <-na.omit (Pew2013) #Listwise deletion to get the data running quickly
+Pew2013$REGION <- as.factor(Pew2013$REGION)
+Pew2013$RACE <- as.factor(Pew2013$RACE)
+Pew2013$fivecat <- as.factor(Pew2013$fivecat)
+Pew2013$PRIMARY_LANGUAGE <- as.factor(Pew2013$PRIMARY_LANGUAGE)
+Pew2013$AGE <- as.factor(Pew2013$AGE)
+Pew2013$PPARTY <- as.factor(Pew2013$PPARTY)
+Pew2013$EDUCCAT2 <- as.factor(Pew2013$EDUCCAT2)
+Pew2013$INCOMECAT <- as.factor(Pew2013$INCOMECAT)
+Pew2013$ORIGIN <- as.factor(Pew2013$ORIGIN)
+Pew2013$CITIZEN <- as.factor(Pew2013$CITIZEN)
+Pew2013$RELI <- as.factor(Pew2013$RELI)
+Pew2013$OP_IMM <- as.factor(Pew2013$OP_IMM)
+Pew2013$OP_TYPICALAMERICAN <- as.factor(Pew2013$OP_TYPICALAMERICAN)
+Pew2013$commondich <- as.factor(Pew2013$commondich)
+Pew2013$generation <- as.factor(Pew2013$generation)
+summary(Pew2013)
+Pew2013 <- as.data.frame(Pew2013)
+
+runmodel("fivecat", c("RACE","AGE","PPARTY","EDUCCAT2","INCOMECAT"), Pew2013)
+
+
 
