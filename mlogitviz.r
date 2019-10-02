@@ -11,8 +11,6 @@ rm(list = ls()) # clean up the environment
 ##############################################################################################################
 
 
-#load data variables for ease now
-ml <- read.dta("https://stats.idre.ucla.edu/stat/data/hsbdemo.dta")
 
 
 runmodel = function(my, variables, mdata){
@@ -50,10 +48,20 @@ runmodel = function(my, variables, mdata){
       # Max
       predictions = rbind(colMeans(fitted(model)[mdata[,get("var")] == (fivenum(mdata[,get("var")])[5]),]), predictions)
       rownames(predictions)[1] = paste0(var,"; Max")
+      if (length(unique(mdata[,get("var")])) > 5) {
+        # 1st Quart
+        predictions = rbind(colMeans(fitted(model)[mdata[,get("var")] == (fivenum(mdata[,get("var")])[2]),]), predictions)
+        rownames(predictions)[1] = paste0(var,"; 1stquart")
+        
+        # 3rd Quart
+        predictions = rbind(colMeans(fitted(model)[mdata[,get("var")] == (fivenum(mdata[,get("var")])[4]),]), predictions)
+        rownames(predictions)[1] = paste0(var,"; 3rdquart")
+      }
+      
     }
   }
   predictions
-  
+  predictions <- na.omit(predictions) 
   
   #define euclidean distance function
   euc.distance <- function(x,y) {
@@ -82,6 +90,8 @@ runmodel = function(my, variables, mdata){
   
   #Let's sort our scaled matrix by hc ordering
   scaledmatrix.sort <- (scale(predictions))[hc$order,]
+  predictions.long <- melt(predictions[hc$order,], id = rownames(predictions))
+  colnames(predictions.long)[colnames(predictions.long)=="value"] <- "originalvalue"
   
   # Let's develop a sorted list of cluster memberships. The cluster memberships are from  mycl <- cutree(hc, h=quantile(AE, .75)) of foo:
   clusmemb <-  mycl[hc$order]
@@ -115,24 +125,38 @@ runmodel = function(my, variables, mdata){
     Xend = c(0.5, (ncol(scaledmatrix.sort)+0.5), rep((ncol(scaledmatrix.sort)+0.5), length(cluster.heights)+1))
   )
   
-  #convert wide form matrix to long form
+  #convert wide form matrix to long form, required for heatmap plot
   scaledmatrix.sort.long <- melt(scaledmatrix.sort, id = rownames(scaledmatrix.sort))
-  #renaming columns for ease
+  
+  #renaming columns for ggplot ease of call
   colnames(scaledmatrix.sort.long)[colnames(scaledmatrix.sort.long)=="Var1"] <- "Predictors"
   colnames(scaledmatrix.sort.long)[colnames(scaledmatrix.sort.long)=="Var2"] <- "Outcomes"
-  # scaledmatrix.sort.long
+  colnames(scaledmatrix.sort.long)[colnames(scaledmatrix.sort.long)=="value"] <- "Column Z-Score"
+  
+  # allows original values to label the cells instead of scaled values
+  scaledmatrix.sort.long <- cbind(scaledmatrix.sort.long, predictions.long)
+
   
   #create heatmap with rows as outcomns, columns as categorical variables, and colors as high to low from scaling
   heatmap.plot <- ggplot(data = scaledmatrix.sort.long, aes(x = Outcomes, y = Predictors)) +
     scale_fill_gradient2(low = "red4", mid = "white",
                          high = "forestgreen", midpoint = 0, space = "Lab",
                          na.value = "grey50", guide = "colourbar", aesthetics = "fill") +
-    geom_tile(aes(fill = value)) +  theme(legend.position = "top") +
-    geom_segment(data=line, aes(x=X, y=Y, xend=Xend, yend=Yend)) 
-  
+    geom_tile(aes(fill = `Column Z-Score`)) +  
+    ggtitle("Heatmap of Predicted Probabilities") +
+    theme(legend.position = "right") +
+    geom_segment(data=line, aes(x=X, y=Y, xend=Xend, yend=Yend)) +
+    geom_text(size = 2, aes(label = format(round(originalvalue, 3), nsmall = 3))) 
+    
+    
   print(heatmap.plot)
   #google how to remove extra grey area in ggplot (padding?)
 }
+
+
+
+#load data variables for ease now
+ml <- read.dta("https://stats.idre.ucla.edu/stat/data/hsbdemo.dta")
 
 # works
 runmodel("prog", c("ses","write","female","schtyp","awards"), ml)
@@ -141,4 +165,5 @@ runmodel("prog", c("ses","write","female","schtyp","awards"), ml)
 runmodel("prog", c("ses","write","math", "science", "female","ses","schtyp","awards"), ml)
 runmodel("prog", c("ses","write","math", "science", "female","schtyp","awards"), ml)
 
+runmodel("prog", c("ses","write","female","schtyp","awards"), ml)
 
