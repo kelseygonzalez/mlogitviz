@@ -48,6 +48,7 @@ runmodel = function(my, variables, mdata){
       # Max
       predictions = rbind(colMeans(fitted(model)[mdata[,get("var")] == (fivenum(mdata[,get("var")])[5]),]), predictions)
       rownames(predictions)[1] = paste0(var,"; Max")
+      
       if (length(unique(mdata[,get("var")])) > 5) {
         # 1st Quart
         predictions = rbind(colMeans(fitted(model)[mdata[,get("var")] == (fivenum(mdata[,get("var")])[2]),]), predictions)
@@ -83,10 +84,6 @@ runmodel = function(my, variables, mdata){
   #perform hierarchical clustering on distance matrix (AE)
   hc <- hclust(d = as.dist(AE), method = "complete")
   
-  #dendro.plot <- ggdendrogram(data = (as.dendrogram(hclust(d = as.dist(AE)))), rotate = TRUE) + 
-  #  theme(axis.text.y = element_text(size = 9)) +
-  #  geom_hline(yintercept=quantile(AE, .75), color="black", size=1)
-  
   #Use that line (75% quartile of distance measures) to create cutoff point for number of groups using the average distance
   mycl <- cutree(hc, h=quantile(AE, .75))
   
@@ -97,9 +94,6 @@ runmodel = function(my, variables, mdata){
   
   # Let's develop a sorted list of cluster memberships. The cluster memberships are from  mycl <- cutree(hc, h=quantile(AE, .75)) of foo:
   clusmemb <-  mycl[hc$order]
-  
-  # Here are the unique cluster numbers IN THE SAME ORDER as the permuted matrix:
-  # unique.clusmemb <- unique(clusmemb)
   
   # PRESERVING THIS ORDER, let's find the number of members of each cluster:
   cluster.sizes <- rep(0, length(unique(clusmemb)))
@@ -112,10 +106,6 @@ runmodel = function(my, variables, mdata){
   # draw the line in the *middle* of each square. The following web pages is helpful on this: url =
   # https://stackoverflow.com/questions/54717536/how-to-keep-abline-within-boundaries-of-the-corrplot
   cluster.heights <- cumsum(cluster.sizes)+ 0.5
-  
-  # Compare the cluster sizes, the cumulative cluster sizes, and the cluster heights:
-  # cumsums <- cumsum(cluster.sizes)
-  # cbind(cluster.sizes, cumsums, cluster.heights)
   
   # To map this onto our future heatmap, we need to map the different line's starting x and y coordinates
   # and ending x and y coordinates. We have Left vertical, Right verticle, minimal line, and then the cut points. 
@@ -138,7 +128,6 @@ runmodel = function(my, variables, mdata){
   # allows original values to label the cells instead of scaled values
   scaledmatrix.sort.long <- cbind(scaledmatrix.sort.long, predictions.long)
 
-  
   #create heatmap with rows as outcomns, columns as categorical variables, and colors as high to low from scaling
   heatmap.plot <- ggplot(data = scaledmatrix.sort.long, aes(x = Outcomes, y = Predictors)) +
     scale_fill_gradient2(low = "red4", mid = "white",
@@ -150,10 +139,9 @@ runmodel = function(my, variables, mdata){
     theme(legend.position = "right", axis.text.x = element_text(angle = 90)) +
     geom_segment(data=line, aes(x=X, y=Y, xend=Xend, yend=Yend)) +
     geom_text(size = 2, aes(label = format(round(originalvalue, 3), nsmall = 3))) 
-    
-    
+
   print(heatmap.plot)
-  #google how to remove extra grey area in ggplot (padding?)
+  #perhaps figure out how to remove extra grey area in ggplot (padding?)
 }
 
 
@@ -169,6 +157,7 @@ runmodel("prog", c("ses","write","math","female","schtyp","awards"), ml)
 runmodel("prog", c("ses","write","math", "science", "female","schtyp","awards"), ml)
 # Error to debug: Error in colMeans(fitted(model)[mdata[, get("var")] == (fivenum(mdata[,  : 'x' must be an array of at least two dimensions 
 # Not sure where this error is originating, as soon as I add math etc it crashes the function
+
 
 # Let's test it with some real data...
 require(readxl)
@@ -193,6 +182,5 @@ summary(Pew2013)
 Pew2013 <- as.data.frame(Pew2013)
 
 runmodel("fivecat", c("RACE","AGE","PPARTY","EDUCCAT2","INCOMECAT"), Pew2013)
-
 
 
