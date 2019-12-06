@@ -94,8 +94,8 @@ runmodel = function(my, variables, mdata){
   hc <- hclust(d = dist(pred, method = "euclidean"), method = "ward.D2")
   plot(hc, cex = 0.6, hang = -1, main="Hierarchal Cluster of Predicted Probabilities")
   abline(h=quantile(dist(pred, method = "euclidean"), .75))
-  rect.hclust(hc, h=quantile(dist(pred, method = "euclidean"), .75), border = 2:5)
-
+  rect.hclust(hc, h=quantile(dist(pred, method = "euclidean"), .75), border = "#c67d08")
+}
     # Use that line (75% quartile of distance measures) to create cutoff point for number of groups using the average distance
   mycl <- cutree(hc, h=quantile(dist(pred, method = "euclidean"), .75))
   mycl
@@ -165,7 +165,7 @@ runmodel = function(my, variables, mdata){
     theme(legend.position = "right", axis.text.x = element_text(angle = 90)) +
     geom_segment(data=line, aes(x=X, y=Y, xend=Xend, yend=Yend)) +
     geom_text(size = 4, aes(label = format(paste0(round(originalvalue, 2)*100,"%"))))
-  
+  print(heatmap.plot)
   ggsave(file="finished.svg", plot=heatmap.plot, width=6.56, height=7.49)
 
 }
@@ -173,7 +173,6 @@ runmodel = function(my, variables, mdata){
 runmodel("prog", c("ses","write","math", "science", "female","schtyp","awards"), ml)
 runmodel("prog", c("ses","write","female","schtyp","awards"), ml)
 runmodel("prog", c("ses","write","math","female","schtyp","awards"), ml)
-
 
 # Let's test it with some real data...
 require(readxl)
