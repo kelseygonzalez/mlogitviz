@@ -8,6 +8,8 @@
 rm(list = ls()) # clean up the environment
 require(foreign)
 require(mlogit)
+require(dplyr)
+
 
 ml <- read.dta("https://stats.idre.ucla.edu/stat/data/hsbdemo.dta")
 

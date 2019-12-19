@@ -36,54 +36,99 @@ runmodel = function(my, variables, mdata){
   
   # for numerical variables, run predicted probabilities with min, median and max. 
     if (class(mdata[,get("var")]) == "numeric"){
+      predicted_vals <- cbind(mdata, fitted(model))
       
-      #get descriptive statistics for the variable
-      five_num = fivenum(mdata[,get("var")])
-      
-      # Min
-      fitted_1 = fitted(model)[mdata[,get("var")] == (five_num[1]),]
-      if (class(fitted_1) == "numeric") {fitted_1 = t(as.matrix(fitted_1))}
-      col_Means = colMeans(fitted_1)      
-      pred = rbind(col_Means, pred)
-      rownames(pred)[1] = paste0(var,"; Min")
-      
-      # Median
-      fitted_1 = fitted(model)[mdata[,get("var")] == (five_num[3]),]
-      if (class(fitted_1) == "numeric") {fitted_1 = t(as.matrix(fitted_1))}
-      col_Means = colMeans(fitted_1)      
-      pred = rbind(col_Means, pred)
-      rownames(pred)[1] = paste0(var,"; Median")
-      
-      # Max
-      fitted_1 = fitted(model)[mdata[,get("var")] == (five_num[5]),]
-      if (class(fitted_1) == "numeric") {fitted_1 = t(as.matrix(fitted_1))}
-      col_Means = colMeans(fitted_1)      
-      pred = rbind(col_Means, pred)
-      rownames(pred)[1] = paste0(var,"; Max")
-      
-      if (length(unique(mdata[,get("var")])) > 5) {
-        # 1st Quart
-        fitted_1 = fitted(model)[mdata[,get("var")] == (five_num[2]),]
-        if (class(fitted_1) == "numeric") {fitted_1 = t(as.matrix(fitted_1))}
-        col_Means = colMeans(fitted_1)      
-        pred = rbind(col_Means, pred)
-        rownames(pred)[1] = paste0(var,"; 1stquart")
+      #for numeric variables with few values, only break into two groups and take min and max
+      if (length(unique(mdata[,get("var")])) < 6) {
+        print(paste(var," gives only min max"))
+        cutpoints <- read.table(text = gsub("[^.0-9]", " ", 
+                                            levels(cut2(mdata[,get("var")], g = 2))), 
+                                col.names = c("lower", "upper"))
+        # Min
+        Min <- 
+          predicted_vals %>% 
+          filter(between(write, cutpoints[1,1], cutpoints[1,2])) %>% 
+          select(general, academic, vocation) %>% 
+          colMeans() %>% 
+          t()
+        predictions <- rbind(Min, predictions)
+        rownames(predictions)[1] = paste0(var,"; Min")
         
-        # 3rd Quart
-        fitted_1 = fitted(model)[mdata[,get("var")] == (five_num[4]),]
-        if (class(fitted_1) == "numeric") {fitted_1 = t(as.matrix(fitted_1))}
-        col_Means = colMeans(fitted_1)      
-        pred = rbind(col_Means, pred)
-        rownames(pred)[1] = paste0(var,"; 3rdquart")
+        # Max
+        Min <- 
+          predicted_vals %>% 
+          filter(between(write, cutpoints[2,1], cutpoints[2,2])) %>% 
+          select(general, academic, vocation) %>% 
+          colMeans() %>% 
+          t()
+        predictions <- rbind(Max, predictions)
+        rownames(predictions)[1] = paste0(var,"; Max")
+      }
+      
+      else{
+        print(paste(var," gives 5 groups"))
+        
+        list_of_vars <- cut2(mdata[,get("var")], g = 5)
+        cuts <- levels(list_of_vars)                     
+        print(cuts)
+        cutpoints <- read.table(text = gsub("[^.0-9]", " ",cuts), 
+                                col.names = c("lower", "upper"))
+        
+        # Min
+        Min <- 
+          predicted_vals %>% 
+          filter(between(write, cutpoints[1,1], cutpoints[1,2])) %>% 
+          select(general, academic, vocation) %>% 
+          colMeans() %>% 
+          t()
+        predictions <- rbind(Min, predictions)
+        rownames(predictions)[1] = paste0(var,"; Min")
+        
+        # first_q
+        first_q <- 
+          predicted_vals %>% 
+          filter(between(write, cutpoints[2,1], cutpoints[2,2])) %>% 
+          select(general, academic, vocation) %>% 
+          colMeans() %>% 
+          t()
+        predictions <- rbind(first_q, predictions)
+        rownames(predictions)[1] = paste0(var,"; 1st Quart")
+        
+        # Middle
+        Mid <- 
+          predicted_vals %>% 
+          filter(between(write, cutpoints[3,1], cutpoints[3,2])) %>% 
+          select(general, academic, vocation) %>% 
+          colMeans() %>% 
+          t()
+        predictions <- rbind(Mid, predictions)
+        rownames(predictions)[1] = paste0(var,"; Mid")
+        
+        # third_q
+        third_q <- 
+          predicted_vals %>% 
+          filter(between(write, cutpoints[4,1], cutpoints[4,2])) %>% 
+          select(general, academic, vocation) %>% 
+          colMeans() %>% 
+          t()
+        predictions <- rbind(third_q, predictions)
+        rownames(predictions)[1] = paste0(var,"; 3rd Quart")
+        
+        # Max
+        Max <- 
+          predicted_vals %>% 
+          filter(between(write, cutpoints[5,1], cutpoints[5,2])) %>% 
+          select(general, academic, vocation) %>% 
+          colMeans() %>% 
+          t()
+        predictions <- rbind(Max, predictions)
+        rownames(predictions)[1] = paste0(var,"; Max")
       }
     }
   }
-  # until I fixed the fact that fivenum may give values no representative in the dataset, 
-  # I will remove variables that are NA
-  pred <- na.omit(pred) 
-  write.csv(pred, file = "1_unsorted_pred.csv")
   
-  
+}
+
   # perform hierarchical clustering on a euclidean distance matrix
   hc <- hclust(d = dist(pred, method = "euclidean"), method = "ward.D2")
   plot(hc, cex = 0.6, hang = -1, main="Hierarchal Cluster of Predicted Probabilities")
