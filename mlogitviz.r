@@ -8,6 +8,13 @@
 # main function
 ##############################################################################################################
 
+get_packages= function(){}
+run_model = function(){}
+mine_predicted_probabilities = function(){}
+mine_predicted_probabilities = function(){}
+
+
+
 runmodel = function(my, variables, mdata){
   # loading packages (and install first)
   packages = c("foreign", "nnet", "ggplot2", "reshape2", "gridExtra", "svglite","sjPlot", "sjmisc", "sjlabelled")
@@ -26,108 +33,117 @@ runmodel = function(my, variables, mdata){
   colnames(pred) = levels(mdata[,get("my")])
   
   # gather predicted probabilities for each variable level for factor variables
+  predicted_vals <- cbind(mdata, fitted(model))
+  
   for (var in variables){
     if (class(mdata[,get("var")]) == "factor") {
       for (one_level in levels(mdata[,get("var")])){
-        pred = rbind(colMeans(fitted(model)[mdata[,get("var")] == one_level,]), pred)
+
+        level <- 
+          predicted_vals %>% 
+          filter(!!as.name(var) == !!one_level) %>% 
+          select(colnames(fitted(model))) %>% 
+          colMeans() %>% 
+          t()
+        pred <- rbind(level, pred)
         rownames(pred)[1] = paste0(var,"; ",one_level)
+        
       }
     }
   
   # for numerical variables, run predicted probabilities with min, median and max. 
     if (class(mdata[,get("var")]) == "numeric"){
-      predicted_vals <- cbind(mdata, fitted(model))
       
       #for numeric variables with few values, only break into two groups and take min and max
-      if (length(unique(mdata[,get("var")])) < 6) {
-        print(paste(var," gives only min max"))
+      if (length(unique(mdata[,get("var")])) < 10) {
         cutpoints <- read.table(text = gsub("[^.0-9]", " ", 
                                             levels(cut2(mdata[,get("var")], g = 2))), 
                                 col.names = c("lower", "upper"))
         # Min
         Min <- 
           predicted_vals %>% 
-          filter(between(write, cutpoints[1,1], cutpoints[1,2])) %>% 
-          select(general, academic, vocation) %>% 
+          filter(between(!!as.name(var), cutpoints[1,1], cutpoints[1,2])) %>% 
+          select(colnames(fitted(model))) %>% 
           colMeans() %>% 
           t()
-        predictions <- rbind(Min, predictions)
-        rownames(predictions)[1] = paste0(var,"; Min")
+        pred <- rbind(Min, pred)
+        rownames(pred)[1] = paste0(var,"; Min")
         
         # Max
-        Min <- 
+        Max <- 
           predicted_vals %>% 
-          filter(between(write, cutpoints[2,1], cutpoints[2,2])) %>% 
-          select(general, academic, vocation) %>% 
+          filter(between(!!as.name(var), cutpoints[2,1], cutpoints[2,2])) %>% 
+          select(colnames(fitted(model))) %>% 
           colMeans() %>% 
           t()
-        predictions <- rbind(Max, predictions)
-        rownames(predictions)[1] = paste0(var,"; Max")
+        pred <- rbind(Max, pred)
+        rownames(pred)[1] = paste0(var,"; Max")
       }
       
       else{
-        print(paste(var," gives 5 groups"))
-        
         list_of_vars <- cut2(mdata[,get("var")], g = 5)
         cuts <- levels(list_of_vars)                     
-        print(cuts)
         cutpoints <- read.table(text = gsub("[^.0-9]", " ",cuts), 
                                 col.names = c("lower", "upper"))
         
         # Min
         Min <- 
           predicted_vals %>% 
-          filter(between(write, cutpoints[1,1], cutpoints[1,2])) %>% 
-          select(general, academic, vocation) %>% 
+          filter(between(!!as.name(var), cutpoints[1,1], cutpoints[1,2])) %>% 
+          select(colnames(fitted(model))) %>% 
           colMeans() %>% 
           t()
-        predictions <- rbind(Min, predictions)
-        rownames(predictions)[1] = paste0(var,"; Min")
+        pred <- rbind(Min, pred)
+        rownames(pred)[1] = paste0(var,"; Min")
         
         # first_q
         first_q <- 
           predicted_vals %>% 
-          filter(between(write, cutpoints[2,1], cutpoints[2,2])) %>% 
-          select(general, academic, vocation) %>% 
+          filter(between(!!as.name(var), cutpoints[2,1], cutpoints[2,2])) %>% 
+          select(colnames(fitted(model))) %>% 
           colMeans() %>% 
           t()
-        predictions <- rbind(first_q, predictions)
-        rownames(predictions)[1] = paste0(var,"; 1st Quart")
+        pred <- rbind(first_q, pred)
+        rownames(pred)[1] = paste0(var,"; 1st Quart")
         
         # Middle
         Mid <- 
           predicted_vals %>% 
-          filter(between(write, cutpoints[3,1], cutpoints[3,2])) %>% 
-          select(general, academic, vocation) %>% 
+          filter(between(!!as.name(var), cutpoints[3,1], cutpoints[3,2])) %>% 
+          select(colnames(fitted(model))) %>% 
           colMeans() %>% 
           t()
-        predictions <- rbind(Mid, predictions)
-        rownames(predictions)[1] = paste0(var,"; Mid")
+        pred <- rbind(Mid, pred)
+        rownames(pred)[1] = paste0(var,"; Mid")
         
         # third_q
         third_q <- 
           predicted_vals %>% 
-          filter(between(write, cutpoints[4,1], cutpoints[4,2])) %>% 
-          select(general, academic, vocation) %>% 
+          filter(between(!!as.name(var), cutpoints[4,1], cutpoints[4,2])) %>% 
+          select(colnames(fitted(model))) %>% 
           colMeans() %>% 
           t()
-        predictions <- rbind(third_q, predictions)
-        rownames(predictions)[1] = paste0(var,"; 3rd Quart")
+        pred <- rbind(third_q, pred)
+        rownames(pred)[1] = paste0(var,"; 3rd Quart")
         
         # Max
         Max <- 
           predicted_vals %>% 
-          filter(between(write, cutpoints[5,1], cutpoints[5,2])) %>% 
-          select(general, academic, vocation) %>% 
+          filter(between(!!as.name(var), cutpoints[5,1], cutpoints[5,2])) %>% 
+          select(colnames(fitted(model))) %>% 
           colMeans() %>% 
           t()
-        predictions <- rbind(Max, predictions)
-        rownames(predictions)[1] = paste0(var,"; Max")
+        pred <- rbind(Max, pred)
+        rownames(pred)[1] = paste0(var,"; Max")
       }
     }
   }
-  
-}
+
+
+
+
+
+
 
   # perform hierarchical clustering on a euclidean distance matrix
   hc <- hclust(d = dist(pred, method = "euclidean"), method = "ward.D2")
@@ -140,7 +156,7 @@ runmodel = function(my, variables, mdata){
   mycl
   print(mycl)
 
-  # Let's sort our scaled matrix by hc ordering
+  # sort the scaled matrix by hc ordering
   matrix.sort <- (pred)[hc$order,]
   write.csv(matrix.sort, file = "2_sorted_pred.csv")
   
@@ -150,7 +166,7 @@ runmodel = function(my, variables, mdata){
   pred.long <- melt(pred[hc$order,], id = rownames(pred))
   colnames(pred.long)[colnames(pred.long)=="value"] <- "originalvalue"
 
-  # Let's develop a sorted list of cluster memberships. The cluster memberships are from  mycl <- cutree(hc, h=quantile(distance_matrix, .75)) of foo:
+  # develop a sorted list of cluster memberships. The cluster memberships are from  mycl <- cutree(hc, h=quantile(distance_matrix, .75)) of foo:
   clusmemb <-  mycl[hc$order]
   write.csv(cbind(scaledmatrix.sort,clusmemb), file = "scaledmatrix_sort_long.csv")
   
