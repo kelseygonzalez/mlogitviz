@@ -14,7 +14,7 @@ context of multinomial logistic regression instead of becoming too enmeshed in t
 categories and p-value significance.
 
 Original multinomial logistic regression output: 
-![Table of mlogit model](https://octodex.github.com/images/yaktocat.png)
+![Table of mlogit model](https://github.com/kelseygonzalez/mlogitviz/blob/master/images/mlogit_original.png?raw=true)
 
 mlogitviz output: 
-![mlogitviz](https://octodex.github.com/images/yaktocat.png)
+![mlogitviz](https://github.com/kelseygonzalez/mlogitviz/blob/master/images/mlogitviz.png?raw=true)
