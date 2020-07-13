@@ -1,17 +1,11 @@
 # MLogitViz testing
 # Kelsey Gonzalez
 # 2019-12-18
-# last update: 2019-12-05
+# last update: 2020-07-12
 
 
 
-rm(list = ls()) # clean up the environment
-require(foreign)
-require(mlogit)
-require(dplyr)
-
-
-ml <- read.dta("https://stats.idre.ucla.edu/stat/data/hsbdemo.dta")
+ml <- foreign::read.dta("https://stats.idre.ucla.edu/stat/data/hsbdemo.dta")
 
 runmodel("prog", c("ses","write","math", "science", "female","schtyp","awards"), ml)
 runmodel("prog", c("ses","write","female","schtyp","awards"), ml)
@@ -40,13 +34,28 @@ summary(Pew2013)
 Pew2013 <- as.data.frame(Pew2013)
 
 runmodel("fivecat", c("RACE","AGE","ORIGIN","generation", "PPARTY","EDUCCAT2","INCOMECAT"), Pew2013)
+model = multinom(fivecat ~ RACE + AGE + ORIGIN + generation +  PPARTY + EDUCCAT2 + INCOMECAT, data = Pew2013)
 
 
-indig <- read.csv("Tribal Citizenship Database_import data analysis_FINAL.csv", stringsAsFactors = FALSE)
-indig$bia.region <- as.factor(indig$bia.region)
-indig$gaming <- as.factor(indig$gaming)
-indig$criteria <- as.factor(indig$criteria)
-indig$size <- as.numeric(indig$size)
 
-runmodel("criteria", c("gaming", "bia.region", "size"), indig)
-class(indig$size)
+require(tidyverse)
+happy <- read_csv("happy.csv")   %>% 
+  mutate(year = year,
+         happiness = as.factor(happiness),
+         realrinc = as.numeric(ifelse(realrinc == "Not applicable", 0, realrinc)),
+         sex = as.factor(sex),
+         race = as.factor(race),
+         racedif = as.factor(ifelse(racedif == 1, "Structural Racisms", "No Structural Racism")),
+         edad = as.numeric(ifelse(edad == "89 or older", 89, edad)),
+         big_region = as.factor(big_region),
+         urban = as.factor(ifelse(urban == 1, "Urban", "Non-Urban")),
+         foreignborn = as.factor(ifelse(foreignborn == 1, "Foreign Born", "US Born")),
+         pparty2 = as.factor(pparty2),
+         married = as.factor(ifelse(married == 1, "Married", "Non-Married")),
+         children = as.factor(ifelse(children == 1, "Has Children", "No Children")),
+         college = as.factor(ifelse(college == 1, "College Grad", "Non-College Grad")),
+         employed = as.factor(ifelse(employed == 1, "Employed", "Non-Employed")),
+         satisfied_fin = as.factor(satisfied_fin)) 
+         
+# this still won't work. There's still a bug somewhere. 
+runmodel("happiness", c("realrinc","sex","race", "racedif","edad","big_region"), happy)
